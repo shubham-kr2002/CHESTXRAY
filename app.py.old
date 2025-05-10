@@ -1,0 +1,76 @@
+from flask import Flask, request, render_template
+import tensorflow as tf
+import numpy as np
+import cv2
+import os
+import json
+
+app = Flask(__name__)
+
+# Parameters
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
+CLASS_NAMES = ['normal', 'pneumonia', 'tuberculosis']  # Updated: 3 classes
+
+# Paths
+project_dir = './chest_xray_ai_project'
+model_path = f'{project_dir}/models/best_model.h5'
+class_indices_file = f'{project_dir}/class_indices.json'
+
+# Load model and class indices
+model = tf.keras.models.load_model(model_path)
+with open(class_indices_file, 'r') as f:
+    class_indices = json.load(f)
+
+def preprocess_image(image_path):
+    """Preprocess an uploaded image for prediction."""
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise ValueError("Failed to load image")
+    img = cv2.resize(img, (IMG_HEIGHT, IMG_WIDTH))
+    img = img / 255.0  # Normalize to [0, 1]
+    img = np.expand_dims(img, axis=-1)  # Add channel dimension
+    img = np.repeat(img, 3, axis=-1)  # Repeat to 3 channels for MobileNetV2
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    return img
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    if 'file' not in request.files:
+        return render_template('index.html', error='No file uploaded')
+    
+    file = request.files['file']
+    if file.filename == '':
+        return render_template('index.html', error='No file selected')
+    
+    # Save uploaded file
+    upload_dir = f'{project_dir}/uploads'
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = f'{upload_dir}/uploaded_image.png'
+    file.save(file_path)
+    
+    try:
+        # Preprocess and predict
+        img = preprocess_image(file_path)
+        prediction = model.predict(img)
+        predicted_class_idx = np.argmax(prediction[0])
+        predicted_class = CLASS_NAMES[predicted_class_idx]
+        confidence = prediction[0][predicted_class_idx] * 100
+        
+        # Get all confidences
+        confidences = {CLASS_NAMES[i]: f'{prediction[0][i] * 100:.2f}' for i in range(len(CLASS_NAMES))}
+        
+        return render_template('result.html', 
+                             prediction=predicted_class, 
+                             confidence=f'{confidence:.2f}',
+                             confidences=confidences,
+                             image_path=file_path)
+    except Exception as e:
+        return render_template('index.html', error=f'Error processing image: {str(e)}')
+
+if __name__ == '__main__':
+    app.run(debug=True)
