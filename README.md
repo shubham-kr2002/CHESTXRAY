@@ -9,8 +9,6 @@
 
 The **Chest X-Ray AI Classifier** is a deep learning-based web application designed to assist healthcare professionals in detecting respiratory diseases such as pneumonia and tuberculosis from chest X-ray images. By leveraging artificial intelligence, the system provides automated classifications, user-friendly explanations, and medically informed suggestions, achieving over 85% accuracy on the ChestX-ray14 dataset from Kaggle. The project integrates MobileNetV2 for image classification, HuggingChat for conversational explanations, and a fine-tuned DistilBERT model for generating health suggestions, all deployed through a Flask-based web interface.
 
-This project was developed as part of a Bachelor of Technology in Computer Science and Engineering, under the guidance of Dr. [Mentor’s Name], completed in May 2025.
-
 ---
 
 ## Features
@@ -27,7 +25,7 @@ This project was developed as part of a Bachelor of Technology in Computer Scien
 
 The application follows a streamlined workflow to process chest X-ray images and deliver comprehensive results:
 
-![Simple Workflow](simple_flowchart.png)
+
 
 1. **Upload Image**: Users upload a chest X-ray image via the Flask web app.
 2. **Preprocess Image**: The image is resized to 224x224 pixels, converted to grayscale, normalized, and prepared for the MobileNetV2 model.
